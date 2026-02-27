@@ -28,10 +28,23 @@ This project is a full-stack application utilizing a dual database setup. The **
 
 You need two separate terminal windows to run both the frontend and backend servers.
 
-### 1. Database Configuration
-1. Execute the MySQL schema file (`setup.sql` or create an identical schema via Workbench) to create the local relational DB.
-2. In the `backend` folder, duplicate `.env.example` and rename it to `.env`.
-3. Add your real local MySQL credentials and MongoDB Atlas connection string to the `.env` file.
+### 1. .env Configuration
+
+1. Create a `.env` file with the following content:
+```
+PORT=3000
+
+# MySQL Configuration
+DB_HOST=127.0.0.1
+DB_PORT=3307
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME=vue_express_app
+
+# MongoDB Configuration
+MONGO_URI=mongodb+srv://Spencer:root@cluster0.yriuuvb.mongodb.net/?appName=Cluster0
+
+```
 
 ### 2. Run Backend
 ```bash
