@@ -8,7 +8,6 @@ import ContactPage from "../views/ContactPage.vue";
 const routes: RouteRecordRaw[] = [
     { path: "/", name: "Landing", component: LandingPage },
     { path: "/about", name: "About", component: AboutPage },
-
     { path: "/leaderboard", name: "Leaderboard", component: LeaderboardPage },
     { path: "/contact", name: "Contact", component: ContactPage },
 ];

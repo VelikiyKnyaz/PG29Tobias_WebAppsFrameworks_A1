@@ -1,53 +1,78 @@
 <template>
-    <div>
-        <h1>Leaderboard</h1>
+  <div class="leaderboard-container">
+    <h2>Leaderboard</h2>
+    <p>Top players integrated with MySQL.</p>
 
-        <button @click="refresh()">Refresh</button>
-
-        <div style="display: flex; gap: 16px; margin-top: 12px;">
-            <div style="flex: 2;">
-                <LeaderboardTable :refreshToken="refreshToken"
-                                  @loaded="onLoaded"
-                                  @select="onSelect" />
-            </div>
-
-            <div style="flex: 1;">
-                <LeaderboardStats :rows="rows" />
-                <hr />
-                <LeaderboardSidebar :selected="selected" />
-            </div>
-        </div>
+    <div v-if="leaderboardStore.loading" class="loading">
+      Cargando posiciones...
     </div>
+
+    <div v-else-if="leaderboardStore.error" class="error">
+      {{ leaderboardStore.error }}
+    </div>
+
+    <table v-else class="leaderboard-table">
+      <thead>
+        <tr>
+          <th>Puesto</th>
+          <th>Jugador</th>
+          <th>Puntaje</th>
+          <th>Nota</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="entry in leaderboardStore.entries" :key="entry.rank">
+          <td>#{{ entry.rank }}</td>
+          <td>{{ entry.player }}</td>
+          <td>{{ entry.score }}</td>
+          <td>{{ entry.note || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import LeaderboardTable from "../components/LeaderboardTable.vue";
-import LeaderboardStats from "../components/LeaderboardStats.vue";
-import LeaderboardSidebar from "../components/LeaderboardSidebar.vue";
+import { onMounted } from 'vue';
+import { useLeaderboardStore } from '../stores/leaderboard';
 
-type LeaderboardItem = {
-  rank: number;
-  player: string;
-  score: number;
-  note?: string;
-};
+const leaderboardStore = useLeaderboardStore();
 
-const rows = ref<LeaderboardItem[]>([]);
-const selected = ref<LeaderboardItem | null>(null);
-const refreshToken = ref(0);
-
-function refresh() {
-  refreshToken.value++;
-}
-
-function onLoaded(data: LeaderboardItem[]) {
-  rows.value = data;
-  // si no hay seleccionado, selecciona el primero por defecto
-  if (!selected.value && data.length > 0) selected.value = data[0];
-}
-
-function onSelect(row: LeaderboardItem) {
-  selected.value = row;
-}
+onMounted(() => {
+  leaderboardStore.fetchLeaderboard();
+});
 </script>
+
+<style scoped>
+.leaderboard-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.leaderboard-table th, .leaderboard-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+.leaderboard-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+.leaderboard-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.loading {
+  font-style: italic;
+  color: #666;
+  margin: 20px 0;
+}
+.error {
+  color: red;
+  margin: 20px 0;
+}
+</style>

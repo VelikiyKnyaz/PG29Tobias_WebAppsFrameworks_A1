@@ -1,67 +1,57 @@
-# Vue + Express: Leaderboard & Contact Screens
-## Student: Tobias Arrieta
+# Vue + Express Multi-Database App
+**Student:** Tobias Arrieta
 
-This exercise extends an existing Vue (frontend) + Express (backend) app by adding two new screens:
-- **Leaderboard**: displays backend data in a basic table + small supporting widgets
-- **Contact**: submits a feedback/inquiry form to the backend
+This project is a full-stack application utilizing a dual database setup. The **Frontend** uses Vue 3 + Pinia for state management, while the **Backend** uses Node.js/Express to handle data operations simultaneously with **MySQL** and **MongoDB**.
 
-## Requirements Covered
-- Fetch backend data with barebones API calls
-- Add routes for new screens (Vue Router)
-- Integrate new links into the existing navigation bar
-- Smooth navigation via router configuration
+## Tech Stack
+- **Frontend:** Vue 3, Vue Router, Pinia (State Management), Axios
+- **Backend:** Node.js, Express, `mysql2`, `mongoose`
+- **Databases:**
+  - **MySQL (Local):** Stores numerical Data (Leaderboard ranks and scores).
+  - **MongoDB (Atlas):** Stores document Data (Contact form submissions).
 
 ---
 
-## Install & Run
+## Features
 
-### 1) Backend (Express)
+1. **Leaderboard Screen (`/leaderboard`)**
+   - Fetches and displays top player scores via Pinia state management.
+   - Connected to MySQL (`vue_express_app.leaderboard`).
+
+2. **Contact Screen (`/contact`)**
+   - Form that accepts User feedback/inquiries.
+   - Posts data to MongoDB Atlas via Mongoose correctly handling field validation.
+
+---
+
+## Setup & Running
+
+You need two separate terminal windows to run both the frontend and backend servers.
+
+### 1. Database Configuration
+1. Execute the MySQL schema file (`setup.sql` or create an identical schema via Workbench) to create the local relational DB.
+2. In the `backend` folder, duplicate `.env.example` and rename it to `.env`.
+3. Add your real local MySQL credentials and MongoDB Atlas connection string to the `.env` file.
+
+### 2. Run Backend
 ```bash
-# from the backend folder
+cd backend
 npm install
 npm run dev
 ```
-Backend runs on:
-- http://localhost:3000
+*(Runs on `http://localhost:3000`)*
 
+### 3. Run Frontend
 ```bash
-# from the frontend folder (Vue/Vite project)
+cd frontend
 npm install
 npm run dev
 ```
-Frontend runs on:
-- http://localhost:5173
----
-
-## New/Updated Routes
-- `/leaderboard` → Leaderboard screen
-- `/contact` → Contact screen
-
-Navigation bar was updated to include links to:
-- Home, About, Leaderboard, Contact
+*(Runs on `http://localhost:5173`)*
 
 ---
 
-## Backend APIs Added
-- `GET /api/leaderboard`, returns a simple array of leaderboard rows (mock data).
-- `POST /api/contact`, accepts JSON `{ name, email, message }` and returns `{ ok: true }` if valid.
-
----
-
-## Code Developed
-### Backend
-- Updated `server.ts`:
-### Frontend
-- Updated router (`src/router/index.ts`):
-  - Added routes for `/leaderboard` and `/contact`
-- Updated navigation (`App.vue`):
-  - Added links for Leaderboard + Contact
-### New Views
-- `src/views/LeaderboardPage.vue`
-- `src/views/ContactPage.vue`
-### New Components
-- `src/components/LeaderboardTable.vue` (fetch + table)
-- `src/components/LeaderboardStats.vue` (basic derived stats)
-- `src/components/LeaderboardSidebar.vue` (selected row detail)
-- `src/components/ContactForm.vue` (form + POST submit)
-
+## API Endpoints
+- `GET /api/leaderboard`: Returns a sorted array of players from MySQL.
+- `GET /api/leaderboard-summary`: Returns the top 3 players from MySQL.
+- `POST /api/contact`: Saves a `{ name, email, message }` JSON payload into MongoDB.

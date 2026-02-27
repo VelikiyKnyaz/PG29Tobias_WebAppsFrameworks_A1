@@ -1,60 +1,94 @@
 import express, { type Request, type Response } from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 
-type LeaderboardItem = {
-    rank: number;
-    player: string;
-    score: number;
-    note?: string;
-};
+// Load DB Connections
+import { mysqlPool } from "./src/db/mysql";
+import { connectMongo } from "./src/db/mongo";
+import { ContactMessage } from "./src/models/mongooseModels";
 
-type ContactPayload = {
-    name: string;
-    email: string;
-    message: string;
-};
+// Load env variables
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/ping", (req: Request, res: Response) => {
-    res.json({ message: "OK" });
-});
+// Initialize MongoDB Connection
+connectMongo();
 
-app.get("/api/leaderboard-summary", (req: Request, res: Response) => {
-    const summaryData = [
-        { player: "Spencer", score: 9999 },
-        { player: "Rafael", score: -9999 },
-        { player: "Yeison", score: -2 },
-    ];
+// ==========================================
+// LEADERBOARD ENDPOINTS (MySQL)
+// ==========================================
 
-    res.json(summaryData);
-});
-
-app.get("/api/leaderboard", (req: Request, res: Response) => {
-    const data: LeaderboardItem[] = [
-        { rank: 1, player: "Spencer", score: 9999, note: "Boss" },
-        { rank: 2, player: "Yeison", score: 420, note: "Grinding" },
-        { rank: 3, player: "Tobias", score: -2, note: "Unlucky" },
-        { rank: 4, player: "Nick", score: 100, note: "New" },
-    ];
-
-    res.json(data);
-});
-
-app.post("/api/contact", (req: Request, res: Response) => {
-    const body = req.body as Partial<ContactPayload>;
-
-    if (!body.name || !body.email || !body.message) {
-        return res.status(400).json({ ok: false, error: "Missing fields" });
+// Get Top 3 Summary
+app.get("/api/leaderboard-summary", async (req: Request, res: Response): Promise<any> => {
+    try {
+        const [rows] = await mysqlPool.query(
+            "SELECT player, score FROM leaderboard ORDER BY score DESC LIMIT 3"
+        );
+        return res.json(rows);
+    } catch (error) {
+        console.error("Error fetching leaderboard summary:", error);
+        return res.status(500).json({ error: "Failed to fetch leaderboard summary" });
     }
+});
 
-    console.log("Contact message received:", body);
+// Get Full Leaderboard
+app.get("/api/leaderboard", async (req: Request, res: Response): Promise<any> => {
+    try {
+        const [rows] = await mysqlPool.query(`
+            SELECT 
+                player, 
+                score, 
+                note 
+            FROM leaderboard 
+            ORDER BY score DESC
+        `);
 
-    return res.json({ ok: true });
+        // Map rank manually for the frontend expectation
+        const formattedData = (rows as any[]).map((row, index) => ({
+            rank: index + 1,
+            player: row.player,
+            score: row.score,
+            note: row.note
+        }));
+
+        return res.json(formattedData);
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+        return res.status(500).json({ error: "Failed to fetch leaderboard" });
+    }
+});
+
+// ==========================================
+// CONTACT ENDPOINT (MongoDB)
+// ==========================================
+app.post("/api/contact", async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { name, email, message } = req.body;
+
+        if (!name || !email || !message) {
+            return res.status(400).json({ ok: false, error: "Missing required fields" });
+        }
+
+        const newContact = new ContactMessage({
+            name,
+            email,
+            message
+        });
+
+        await newContact.save();
+
+        console.log("Contact message saved to MongoDB:", newContact._id);
+        return res.json({ ok: true, message: "Contact message sent successfully" });
+
+    } catch (error) {
+        console.error("Contact Error:", error);
+        return res.status(500).json({ ok: false, error: "Internal server error" });
+    }
 });
 
 app.listen(PORT, () => {
